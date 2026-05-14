@@ -10,7 +10,11 @@ const PORT = process.env.PORT || 3700;
 const app = express();
 app.disable("etag");
 
-app.use(cors({ origin: ["http://localhost:5178"] }));
+app.use(
+  cors({
+    origin: ["http://localhost:5178", "https://clientgestor.netlify.app/"],
+  }),
+);
 app.use(express.json());
 app.use(logRequest);
 
