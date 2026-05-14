@@ -1,0 +1,30 @@
+{
+  "name": "auditory-service",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV='docker' nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-stop": "docker ps -aq --filter 'name=auditory-service'| xargs -r docker stop",
+    "build-rm": "docker ps -aq --filter 'name=auditory-service'| xargs -r docker rm",
+    "build-rmi": "docker images -q --filter 'reference=auditory-service-auditory-service:latest' | xargs -r docker rmi -f",
+    "build": "npm run build-stop && npm run build-rm && npm run build-rmi && docker compose -f docker-compose.auditory.yml up --build --remove-orphans"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.8",
+    "umzug": "^3.8.2"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.5"
+  }
+}

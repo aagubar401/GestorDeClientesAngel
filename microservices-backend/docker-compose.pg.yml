@@ -1,0 +1,43 @@
+#https://learn.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/multi-container-applications-docker-compose
+#https://docs.docker.com/compose/compose-file/
+
+services:
+  postgres:
+    container_name: practicas_postgres_db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: practicas
+      POSTGRES_PASSWORD: _Practicas
+    ports:
+      - "5452:5432"
+    networks:
+      practicas_2026:
+        aliases:
+          - practicas_postgres_db
+    volumes:
+      - practicas_db:/var/lib/postgresql
+  pgadmin:
+    container_name: practicas_pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    ports:
+      - "5052:80"
+    networks:
+      practicas_2026:
+        aliases:
+          - practicas_pgadmin
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: practicas@practicas.com
+      PGADMIN_DEFAULT_PASSWORD: _Practicas
+    volumes:
+      - practicas_pga:/var/lib/pgadmin
+volumes:
+  practicas_db:
+  practicas_pga:
+networks:
+  practicas_2026:
+    name: practicas_2026
+    driver: bridge

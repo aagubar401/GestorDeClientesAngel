@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0d0d0d;
+  --color-primary-text: #000000;
+  --color-white-text: #ffffff;
+  --color-buttons: #7fff00;
+  --color-buttons-hover: #00ff00;
+  --color-register: #6405ed;
+  --color-register-hover: #0000cd;
+}
+
+.input {
+  @apply p-3 rounded border border-gray-300 bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400;
+}
+
+.register {
+  @apply text-blue-400 underline;
+}

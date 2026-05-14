@@ -1,0 +1,22 @@
+services:
+  customers-service:
+    container_name: customers-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV="docker"
+    ports:
+      - "3900:3900"
+    networks:
+      practicas_2026:
+        aliases:
+          - customers-service
+    volumes:
+      - ./:/home/node/app
+      - /home/node/app/node_modules
+
+networks:
+  practicas_2026:
+    name: practicas_2026
+    driver: bridge

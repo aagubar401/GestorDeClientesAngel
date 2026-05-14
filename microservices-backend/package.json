@@ -1,0 +1,16 @@
+{
+  "name": "microservices-backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "db:up": "docker compose -f docker-compose.pg.yml up -d",
+    "db:down": "docker compose -f docker-compose.pg.yml down"
+  },
+  "dependencies": {
+    "cors": "^2.8.6"
+  }
+}

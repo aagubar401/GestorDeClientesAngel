@@ -1,0 +1,25 @@
+#https://learn.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/multi-container-applications-docker-compose
+#https://docs.docker.com/compose/compose-file/
+
+services:
+  auditory-service:
+    container_name: auditory-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV="docker"
+    ports:
+      - "3700:3700"
+    networks:
+      practicas_2026:
+        aliases:
+          - auditory-service
+    volumes:
+      - ./:/home/node/app
+      - /home/node/app/node_modules
+
+networks:
+  practicas_2026:
+    name: practicas_2026
+    driver: bridge

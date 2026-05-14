@@ -1,0 +1,25 @@
+#https://learn.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/multi-container-applications-docker-compose
+#https://docs.docker.com/compose/compose-file/
+
+services:
+  users-service:
+    container_name: users-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV="docker"
+    ports:
+      - "3400:3400"
+    networks:
+      practicas_2026:
+        aliases:
+          - users-service
+    volumes:
+      - ./:/home/node/app
+      - /home/node/app/node_modules
+
+networks:
+  practicas_2026:
+    name: practicas_2026
+    driver: bridge
