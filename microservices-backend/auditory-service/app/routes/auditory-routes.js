@@ -2,6 +2,7 @@ import createAuditory from "../controllers/createAuditory.js";
 import listAuditories from "../controllers/listAuditories.js";
 import getAuditoryById from "../controllers/getAuditoryById.js";
 import verifyToken from "../middlewares/authorizeJWT.js";
+import getCustomerModifiedHistory from "../controllers/getCustomerModifiedHistory.js";
 const auditoryRoutes = (app) => {
   app.get("/prueba", (req, res, next) => {
     res
@@ -19,6 +20,7 @@ const auditoryRoutes = (app) => {
   app.post("/audit-logs", createAuditory)
   app.get("/audit-logs", listAuditories)
   app.get("/audit-logs/:id", getAuditoryById)
+  app.get("/audit-logs/customers/:customerId/history", getCustomerModifiedHistory)
 };
 
 export default auditoryRoutes;

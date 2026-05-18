@@ -1,4 +1,5 @@
 import useHandleCustomerCard from "./hooks/useHandleCustomerCard";
+
 const CustomerCard = () => {
   const {
     fields: {
@@ -10,10 +11,15 @@ const CustomerCard = () => {
       form,
       error,
       message,
+      auditHistory,
+      tableMode
     },
     handleChange,
     handleSubmit,
+    setTableModeFunction,
   } = useHandleCustomerCard();
+
+
   return (
     <div className="w-full bg-white p-8 rounded-xl shadow border border-gray-300 h-full overflow-auto">
       <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
@@ -138,7 +144,26 @@ const CustomerCard = () => {
           </div>
         )}
 
-        {consultMode && (
+        {consultMode && !tableMode && (
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              onClick={() => navigate("/customers")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold"
+            >
+              Volver al listado
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/customers/modify/${id}/false`)}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded transition"
+            >
+              Modificar
+            </button>
+          </div>
+        )}
+
+        {consultMode && tableMode && (
           <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
@@ -167,6 +192,105 @@ const CustomerCard = () => {
               <span className="font-semibold">Actualizado:</span>{" "}
               {new Date(form.updatedAt).toLocaleString()}
             </p>
+          </div>
+        )}
+        {consultMode && auditHistory.length > 0 && tableMode && (
+          <div className="mt-8 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Historial de cambios</h3>
+
+              <button
+                type="button"
+                onClick={() => setTableModeFunction(false)}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded transition"
+              >
+                Ver registro en lista
+              </button>
+            </div>
+          </div>
+        )}
+
+        {consultMode && auditHistory.length > 0 && !tableMode && (
+          <div className="mt-8 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Historial de cambios</h3>
+
+              <button
+                type="button"
+                onClick={() => setTableModeFunction(true)}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded transition"
+              >
+                Ver registro en tabla
+              </button>
+            </div>
+          </div>
+        )}
+
+        {consultMode && auditHistory.length > 0 && !tableMode && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg border">
+            {auditHistory.map((entry, index) => (
+              <div key={index} className="mb-4 pb-4 border-b last:border-none">
+                <p className="font-medium text-gray-700">
+                  Fecha: {new Date(entry.date).toLocaleString("es-ES")}
+                </p>
+
+                {entry.diffs.length === 0 ? (
+                  <p className="text-gray-600 italic mt-1">
+                    No se detectaron cambios en esta modificación.
+                  </p>
+                ) : (
+                  <ul className="mt-2 ml-4 list-disc text-gray-800">
+                    {entry.diffs.map((d, i) => (
+                      <li key={i}>
+                        <span className="font-semibold capitalize">
+                          {d.field}:
+                        </span>{" "}
+                        {d.oldValue || "-"} {"-->"} {d.newValue || "-"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {consultMode && auditHistory.length > 0 && tableMode && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg border">
+            {auditHistory.map((entry, index) => (
+              <div key={index} className="mb-4 pb-4 border-b last:border-none">
+                <p className="font-medium text-gray-700">
+                  Fecha: {new Date(entry.date).toLocaleString("es-ES")}
+                </p>
+
+                {entry.diffs.length === 0 ? (
+                  <p className="text-gray-600 italic mt-1">
+                    No se detectaron cambios en esta modificación.
+                  </p>
+                ) : (
+                  <table className="w-full mt-2 text-gray-800">
+                    <thead>
+                      <tr>
+                        <th>Campo</th>
+                        <th>Valor Anterior</th>
+                        <th>Valor Nuevo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entry.diffs.map((d, i) => (
+                        <tr key={i}>
+                          <td className="px-4 py-2 font-semibold capitalize">
+                            {d.field}:
+                          </td>
+                          <td className="px-4 py-2">{d.oldValue || "-"}</td>
+                          <td className="px-4 py-2">{d.newValue || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </form>

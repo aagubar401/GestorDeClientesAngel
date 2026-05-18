@@ -11,7 +11,7 @@ const useHandleAuditoryCard = (id) => {
         setLoading(true);
 
         // 1️⃣ Obtener auditoría
-        const res = await authFetch(`${import.meta.env.VITE_API_URL_AUDITORIES}/audit-logs/${id}`);
+        const res = await authFetch(`${import.meta.env.VITE_API_URL_AUDITORIES}/${id}`);
         const json = await res.json();
 
         if (!res.ok) {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { authFetch } from "../../../../utils/authFetch";
+
 const useHandleCustomerCard = () => {
   const { id, isConsulting } = useParams();
   const createMode = !id;
@@ -21,6 +22,8 @@ const useHandleCustomerCard = () => {
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [tableMode, setTableMode] = useState(false);
+  const [auditHistory, setAuditHistory] = useState([]);
 
   const validarDNI = (dni) => {
     const regex = /^[0-9]{8}[A-Za-z]$/;
@@ -32,21 +35,37 @@ const useHandleCustomerCard = () => {
   };
 
   const validarPhone = (phone) => {
-    const regex = /^[0-9]{9}$/
+    const regex = /^[0-9]{9}$/;
     if (!regex.test(phone)) {
-      return false
+      return false;
     } else {
-      return true
+      return true;
     }
-  }
-  
+  };
 
+  const traducirKeys = (key) => { 
+    const traducciones = {
+      name: "Nombre",
+      taxId: "DNI",
+      email: "Correo",
+      phone: "Teléfono",
+      address: "Dirección",
+      status: "Estado",
+    };
+    return traducciones[key] || key;
+  }
+
+  // 🔥 Cargar cliente
   useEffect(() => {
     if (!id) return;
+
     const loadCustomer = async () => {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL_CUSTOMERS}/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
+      const res = await authFetch(
+        `${import.meta.env.VITE_API_URL_CUSTOMERS}/${id}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
 
       const data = await res.json();
 
@@ -61,10 +80,65 @@ const useHandleCustomerCard = () => {
     loadCustomer();
   }, [id]);
 
+  useEffect(() => {
+    if (!id || !consultMode) return;
+
+    const loadAudits = async () => {
+      const res = await authFetch(import.meta.env.VITE_API_URL_AUDITORIES, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      const json = await res.json();
+      if (!res.ok) return;
+
+      const audits = (json.auditories || [])
+        .filter(
+          (a) =>
+            a.action === "customer.modified" &&
+            Number(a.entityId) === Number(id),
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+
+      const history = audits.map((audit) => {
+        const oldData = audit.metadata?.old || {};
+        const newData = audit.metadata?.new || {};
+
+        const diffs = [];
+        if (oldData["status"] === true) oldData["status"] = "activo";
+        else if (oldData["status"] === false) oldData["status"] = "inactivo";
+
+        if (newData["status"] === true) newData["status"] = "activo";
+        else if (newData["status"] === false) newData["status"] = "inactivo";
+        Object.keys(newData).forEach((key) => {
+          if (oldData[key] !== newData[key]) {
+            let keyTraducida = traducirKeys(key);
+            diffs.push({
+              field: keyTraducida,
+              oldValue: oldData[key] ?? "",
+              newValue: newData[key] ?? "",
+            });
+          }
+        });
+
+        return {
+          date: audit.createdAt,
+          diffs,
+        };
+      });
+
+      setAuditHistory(history);
+    };
+
+    loadAudits();
+  }, [id, consultMode]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // status debe convertirse a boolean
     if (name === "status") {
       setForm({ ...form, status: value === "true" });
     } else {
@@ -78,14 +152,12 @@ const useHandleCustomerCard = () => {
     setMessage("");
 
     const taxId = (form.taxId ?? "").trim();
-
     if (taxId !== "" && !validarDNI(taxId)) {
       setError("El DNI no es válido.");
       return;
     }
 
     const phone = (form.phone ?? "").trim();
-
     if (phone !== "" && !validarPhone(phone)) {
       setError("El teléfono no es válido.");
       return;
@@ -93,26 +165,30 @@ const useHandleCustomerCard = () => {
 
     const payload = {
       ...form,
-      taxId: taxId === "" ? null : taxId
+      taxId: taxId === "" ? null : taxId,
     };
 
-    
-    const res = (consultMode || modifyMode) ? await authFetch(`${import.meta.env.VITE_API_URL_CUSTOMERS}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify(payload)
-    }) : await fetch(`${import.meta.env.VITE_API_URL_CUSTOMERS}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify(payload)
-      });
-  
+    const url = `${import.meta.env.VITE_API_URL_CUSTOMERS}/${id}`;
+    const method = modifyMode ? "PUT" : "POST";
+
+    const res =
+      modifyMode || consultMode
+        ? await authFetch(url, {
+            method,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(payload),
+          })
+        : await fetch(import.meta.env.VITE_API_URL_CUSTOMERS, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(payload),
+          });
 
     const data = await res.json();
 
@@ -120,7 +196,7 @@ const useHandleCustomerCard = () => {
       setError(data.error);
       return;
     }
-    // cambiar mensaje según mode
+
     if (modifyMode) {
       setMessage("Cliente modificado correctamente");
       setTimeout(() => navigate("/customers"), 1200);
@@ -128,12 +204,28 @@ const useHandleCustomerCard = () => {
       setMessage("Cliente creado correctamente");
       setTimeout(() => navigate("/customers"), 1200);
     }
-    
   };
-  return {
-    fields: {id, createMode, modifyMode, consultMode, navigate, form, error, message},
-    handleChange, handleSubmit
+  const setTableModeFunction = (mode) => {
+    setTableMode(mode);
   }
-}
 
-export default useHandleCustomerCard
+  return {
+    fields: {
+      id,
+      createMode,
+      modifyMode,
+      consultMode,
+      navigate,
+      form,
+      error,
+      message,
+      auditHistory,
+      tableMode
+    },
+    handleChange,
+    handleSubmit,
+    setTableModeFunction,
+  };
+};
+
+export default useHandleCustomerCard;
