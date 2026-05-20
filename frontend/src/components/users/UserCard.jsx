@@ -16,6 +16,9 @@ const UserCard = ({ onUserUpdated }) => {
       refreshUser,
       pendingAvatar,
       setPendingAvatar,
+      auditHistory,
+      tableMode,
+      setTableMode,
     },
     handleSubmit,
     handleDeleteAvatar,
@@ -31,7 +34,6 @@ const UserCard = ({ onUserUpdated }) => {
     onUserUpdated?.();
   };
 
-  // 🔵 Crear y limpiar URL de preview
   useEffect(() => {
     if (
       pendingAvatar &&
@@ -61,7 +63,6 @@ const UserCard = ({ onUserUpdated }) => {
     );
   }
 
-  // Avatar a mostrar: preview > borrado > avatar real > inicial
   const avatarToShow =
     pendingAvatar === "DELETE"
       ? null
@@ -75,7 +76,6 @@ const UserCard = ({ onUserUpdated }) => {
     <div className="w-full bg-white p-8 rounded-xl shadow border border-gray-300 h-full overflow-auto">
       {/* Avatar + Nombre */}
       <div className="flex flex-col items-center mb-6">
-        {/* AVATAR */}
         <div className="relative group w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-4xl font-bold shadow overflow-hidden">
           {avatarToShow ? (
             <img
@@ -87,10 +87,8 @@ const UserCard = ({ onUserUpdated }) => {
             <span>{user.name.charAt(0).toUpperCase()}</span>
           )}
 
-          {/* OVERLAY con iconos */}
           {modifyMode && (
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
-              {/* SUBIR */}
               <button
                 onClick={triggerFileSelect}
                 className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition"
@@ -99,7 +97,6 @@ const UserCard = ({ onUserUpdated }) => {
                 ↑
               </button>
 
-              {/* ELIMINAR */}
               {(user.avatar || pendingAvatar) && (
                 <button
                   onClick={() => setPendingAvatar("DELETE")}
@@ -112,7 +109,6 @@ const UserCard = ({ onUserUpdated }) => {
             </div>
           )}
 
-          {/* Input oculto */}
           <input
             type="file"
             ref={fileInputRef}
@@ -162,10 +158,7 @@ const UserCard = ({ onUserUpdated }) => {
             <form
               onSubmit={async (e) => {
                 await handleSubmit(e);
-
-                // limpiar input file
                 if (fileInputRef.current) fileInputRef.current.value = "";
-
                 notifyParent();
               }}
               className="space-y-4 mt-2"
@@ -212,7 +205,7 @@ const UserCard = ({ onUserUpdated }) => {
       </div>
 
       {/* Botón Editar */}
-      {consultMode && (
+      {consultMode && !modifyMode && (
         <div className="flex justify-end mt-10">
           <button
             onClick={() => {
@@ -225,6 +218,103 @@ const UserCard = ({ onUserUpdated }) => {
             Editar
           </button>
         </div>
+      )}
+
+      {/* ----------------------------- */}
+      {/*   HISTORIAL DE CAMBIOS USER   */}
+      {/* ----------------------------- */}
+      {consultMode && !modifyMode && auditHistory.length > 0 && (
+        <>
+          <div className="mt-8 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Historial de cambios</h3>
+
+              <button
+                type="button"
+                onClick={() => setTableMode((prev) => !prev)}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded transition"
+              >
+                {tableMode ? "Ver registro en lista" : "Ver registro en tabla"}
+              </button>
+            </div>
+          </div>
+
+          {/* LISTA */}
+          {!tableMode && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg border">
+              {auditHistory.map((entry, index) => (
+                <div
+                  key={index}
+                  className="mb-4 pb-4 border-b last:border-none"
+                >
+                  <p className="font-medium text-gray-700">
+                    Fecha: {new Date(entry.date).toLocaleString("es-ES")}
+                  </p>
+
+                  {entry.diffs.length === 0 ? (
+                    <p className="text-gray-600 italic mt-1">
+                      No se detectaron cambios en esta modificación.
+                    </p>
+                  ) : (
+                    <ul className="mt-2 ml-4 list-disc text-gray-800">
+                      {entry.diffs.map((d, i) => (
+                        <li key={i}>
+                          <span className="font-semibold capitalize">
+                            {d.field}:
+                          </span>{" "}
+                          {d.oldValue || "-"} {"-->"} {d.newValue || "-"}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TABLA */}
+          {tableMode && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg border">
+              {auditHistory.map((entry, index) => (
+                <div
+                  key={index}
+                  className="mb-4 pb-4 border-b last:border-none"
+                >
+                  <p className="font-medium text-gray-700">
+                    Fecha: {new Date(entry.date).toLocaleString("es-ES")}
+                  </p>
+
+                  {entry.diffs.length === 0 ? (
+                    <p className="text-gray-600 italic mt-1">
+                      No se detectaron cambios en esta modificación.
+                    </p>
+                  ) : (
+                    <table className="w-full mt-2 text-gray-800">
+                      <thead>
+                        <tr>
+                          <th>Campo</th>
+                          <th>Valor Anterior</th>
+                          <th>Valor Nuevo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {entry.diffs.map((d, i) => (
+                          <tr key={i}>
+                            <td className="px-4 py-2 font-semibold capitalize">
+                              {d.field}
+                            </td>
+                            <td className="px-4 py-2">{d.oldValue || "-"}</td>
+                            <td className="px-4 py-2">{d.newValue || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
