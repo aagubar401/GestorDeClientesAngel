@@ -12,22 +12,21 @@ const CustomerCard = () => {
       error,
       message,
       auditHistory,
-      tableMode
+      tableMode,
     },
     handleChange,
     handleSubmit,
     setTableModeFunction,
   } = useHandleCustomerCard();
 
-
   return (
     <div className="w-full bg-white p-8 rounded-xl shadow border border-gray-300 h-full overflow-auto">
       <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
         {consultMode
-          ? "📄 Datos del Cliente"
+          ? "Datos del Cliente"
           : createMode
-            ? "➕ Crear Cliente"
-            : "✏️ Modificar Cliente"}
+            ? "Crear Cliente"
+            : "Modificar Cliente"}
       </h2>
 
       {error && (
@@ -144,7 +143,8 @@ const CustomerCard = () => {
           </div>
         )}
 
-        {consultMode && !tableMode && (
+        {/* Botones en modo consulta */}
+        {consultMode && (
           <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
@@ -163,25 +163,7 @@ const CustomerCard = () => {
           </div>
         )}
 
-        {consultMode && tableMode && (
-          <div className="flex justify-end gap-4 mt-6">
-            <button
-              type="button"
-              onClick={() => navigate("/customers")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold"
-            >
-              Volver al listado
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/customers/modify/${id}/false`)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded transition"
-            >
-              Modificar
-            </button>
-          </div>
-        )}
-
+        {/* Fechas */}
         {consultMode && (
           <div className="grid grid-cols-1 gap-3 text-gray-800">
             <p>
@@ -194,40 +176,31 @@ const CustomerCard = () => {
             </p>
           </div>
         )}
-        {consultMode && auditHistory.length > 0 && tableMode && (
+
+        {/* ----------------------------- */}
+        {/*   HISTORIAL DE CAMBIOS        */}
+        {/* ----------------------------- */}
+
+        {/* Barra título + botón */}
+        {consultMode && auditHistory.length > 0 && (
           <div className="mt-8 p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl font-semibold">Historial de cambios</h3>
 
               <button
                 type="button"
-                onClick={() => setTableModeFunction(false)}
+                onClick={() => setTableModeFunction(!tableMode)}
                 className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded transition"
               >
-                Ver registro en lista
+                {tableMode ? "Ver registro en lista" : "Ver registro en tabla"}
               </button>
             </div>
           </div>
         )}
 
+        {/* LISTA */}
         {consultMode && auditHistory.length > 0 && !tableMode && (
-          <div className="mt-8 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold">Historial de cambios</h3>
-
-              <button
-                type="button"
-                onClick={() => setTableModeFunction(true)}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded transition"
-              >
-                Ver registro en tabla
-              </button>
-            </div>
-          </div>
-        )}
-
-        {consultMode && auditHistory.length > 0 && !tableMode && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg border">
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg border">
             {auditHistory.map((entry, index) => (
               <div key={index} className="mb-4 pb-4 border-b last:border-none">
                 <p className="font-medium text-gray-700">
@@ -255,8 +228,9 @@ const CustomerCard = () => {
           </div>
         )}
 
+        {/* TABLA */}
         {consultMode && auditHistory.length > 0 && tableMode && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg border">
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg border">
             {auditHistory.map((entry, index) => (
               <div key={index} className="mb-4 pb-4 border-b last:border-none">
                 <p className="font-medium text-gray-700">
@@ -280,7 +254,7 @@ const CustomerCard = () => {
                       {entry.diffs.map((d, i) => (
                         <tr key={i}>
                           <td className="px-4 py-2 font-semibold capitalize">
-                            {d.field}:
+                            {d.field}
                           </td>
                           <td className="px-4 py-2">{d.oldValue || "-"}</td>
                           <td className="px-4 py-2">{d.newValue || "-"}</td>

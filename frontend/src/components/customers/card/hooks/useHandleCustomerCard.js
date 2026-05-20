@@ -10,6 +10,7 @@ const useHandleCustomerCard = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    id: null, 
     name: "",
     taxId: "",
     email: "",
@@ -34,16 +35,9 @@ const useHandleCustomerCard = () => {
     return letra === letras[numero % 23];
   };
 
-  const validarPhone = (phone) => {
-    const regex = /^[0-9]{9}$/;
-    if (!regex.test(phone)) {
-      return false;
-    } else {
-      return true;
-    }
-  };
+  const validarPhone = (phone) => /^[0-9]{9}$/.test(phone);
 
-  const traducirKeys = (key) => { 
+  const traducirKeys = (key) => {
     const traducciones = {
       name: "Nombre",
       taxId: "DNI",
@@ -53,9 +47,12 @@ const useHandleCustomerCard = () => {
       status: "Estado",
     };
     return traducciones[key] || key;
-  }
+  };
 
-  // 🔥 Cargar cliente
+  const traducirEstado = (val) =>
+    val === true ? "activo" : val === false ? "inactivo" : val;
+
+
   useEffect(() => {
     if (!id) return;
 
@@ -74,50 +71,46 @@ const useHandleCustomerCard = () => {
         return;
       }
 
-      setForm(data.customer);
+      setForm(data.customer); // 🔥 AQUÍ YA VIENE form.id = 245
     };
 
     loadCustomer();
   }, [id]);
 
+
   useEffect(() => {
-    if (!id || !consultMode) return;
+    if (!consultMode) return;
+    if (!form.id) return; // 🔥 AHORA SÍ FUNCIONA
 
     const loadAudits = async () => {
-      const res = await authFetch(import.meta.env.VITE_API_URL_AUDITORIES, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const res = await authFetch(
+        `${import.meta.env.VITE_API_URL_AUDITORIES}/customers/${form.id}/history`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
 
       const json = await res.json();
       if (!res.ok) return;
 
-      const audits = (json.auditories || [])
-        .filter(
-          (a) =>
-            a.action === "customer.modified" &&
-            Number(a.entityId) === Number(id),
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-
+      const audits = json.history || [];
 
       const history = audits.map((audit) => {
         const oldData = audit.metadata?.old || {};
         const newData = audit.metadata?.new || {};
 
-        const diffs = [];
-        if (oldData["status"] === true) oldData["status"] = "activo";
-        else if (oldData["status"] === false) oldData["status"] = "inactivo";
+        // Normalizar estado
+        if ("status" in oldData)
+          oldData.status = traducirEstado(oldData.status);
+        if ("status" in newData)
+          newData.status = traducirEstado(newData.status);
 
-        if (newData["status"] === true) newData["status"] = "activo";
-        else if (newData["status"] === false) newData["status"] = "inactivo";
+        const diffs = [];
+
         Object.keys(newData).forEach((key) => {
           if (oldData[key] !== newData[key]) {
-            let keyTraducida = traducirKeys(key);
             diffs.push({
-              field: keyTraducida,
+              field: traducirKeys(key),
               oldValue: oldData[key] ?? "",
               newValue: newData[key] ?? "",
             });
@@ -129,12 +122,13 @@ const useHandleCustomerCard = () => {
           diffs,
         };
       });
-
+      console.log("HISTORIAL DE AUDITORÍAS PROCESADO:", history);
       setAuditHistory(history);
     };
 
     loadAudits();
-  }, [id, consultMode]);
+  }, [consultMode, form.id]); 
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -145,6 +139,7 @@ const useHandleCustomerCard = () => {
       setForm({ ...form, [name]: value });
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -205,9 +200,10 @@ const useHandleCustomerCard = () => {
       setTimeout(() => navigate("/customers"), 1200);
     }
   };
+
   const setTableModeFunction = (mode) => {
     setTableMode(mode);
-  }
+  };
 
   return {
     fields: {
@@ -220,7 +216,7 @@ const useHandleCustomerCard = () => {
       error,
       message,
       auditHistory,
-      tableMode
+      tableMode,
     },
     handleChange,
     handleSubmit,
