@@ -95,30 +95,63 @@ describe("Controller: modifyCustomer", () => {
     });
   });
 
-  test("devuelve 200 si el cliente se modifica correctamente", async () => {
+  test("devuelve 200 y NO envía auditoría si los datos son iguales", async () => {
+    const oldCustomer = {
+      id: 10,
+      name: "Igual",
+      taxId: "12345678Z",
+      email: "igual@test.com",
+      phone: "666777888",
+      address: "Misma dirección",
+      status: true,
+    };
+
+    db.customers.findByPk.mockResolvedValue(oldCustomer);
+
     modifyCustomerDAL.mockResolvedValue({
-      customer: { id: 10, name: "Nuevo Nombre" },
+      customer: { ...oldCustomer },
     });
 
     await modifyCustomer(req, res, next);
 
-    expect(modifyCustomerDAL).toHaveBeenCalledWith({
-      id: "10",
-      userId: 5,
-      name: "Nuevo Nombre",
-      taxId: "12345678Z",
-      email: "nuevo@test.com",
-      phone: "666777888",
-      address: "Nueva dirección",
-      status: true,
+    expect(fetch).not.toHaveBeenCalled();
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Los datos son los mismos que los actuales",
+      customer: oldCustomer,
     });
+  });
+
+  test("devuelve 200 y envía auditoría si los datos cambian", async () => {
+    modifyCustomerDAL.mockResolvedValue({
+      customer: {
+        id: 10,
+        name: "Nuevo Nombre",
+        taxId: "12345678Z",
+        email: "nuevo@test.com",
+        phone: "666777888",
+        address: "Nueva dirección",
+        status: true,
+      },
+    });
+
+    await modifyCustomer(req, res, next);
 
     expect(fetch).toHaveBeenCalled(); // auditoría enviada
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       message: "Cliente modificado correctamente",
-      customer: { id: 10, name: "Nuevo Nombre" },
+      customer: {
+        id: 10,
+        name: "Nuevo Nombre",
+        taxId: "12345678Z",
+        email: "nuevo@test.com",
+        phone: "666777888",
+        address: "Nueva dirección",
+        status: true,
+      },
     });
   });
 
