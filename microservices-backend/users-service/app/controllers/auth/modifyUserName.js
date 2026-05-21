@@ -17,7 +17,12 @@ const modifyUserName = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
 
     const result = await modifyUserNameDAL({ userId, name });
-
+    if (oldUser.name === result.user.name) {
+      return res.status(200).json({
+        message: "El nombre es el mismo que el actual",
+        user: result.user,
+      });
+    }
     await sendAudit({
       url: "http://auditory-service:3700/audit-logs",
       headers: {
