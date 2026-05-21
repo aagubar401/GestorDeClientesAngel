@@ -22,6 +22,17 @@ const modifyCustomer = async (req, res, next) => {
 
     const context = { id, userId, name, taxId, email, phone, address, status }; // <-- AÑADIDO
     const result = await modifyCustomerDAL(context);
+    if (oldCustomer.name === result.customer.name &&
+        oldCustomer.taxId === result.customer.taxId &&
+        oldCustomer.email === result.customer.email &&
+        oldCustomer.phone === result.customer.phone &&
+        oldCustomer.address === result.customer.address &&
+        oldCustomer.status === result.customer.status) {
+      return res.status(200).json({
+        message: "Los datos son los mismos que los actuales",
+        customer: result.customer,
+      });
+    }
     try {
       await fetch("http://auditory-service:3700/audit-logs", {
         method: "POST",
